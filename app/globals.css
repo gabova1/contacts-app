@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+html,
+body {
+  overscroll-behavior: none;
+  height: 100%;
+}
+
+body {
+  background-color: #f2f2f7;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+}
+
+/* iOS-style scrollbar */
+::-webkit-scrollbar {
+  width: 0;
+  background: transparent;
+}
+
+/* Smooth scroll */
+.scroll-smooth {
+  scroll-behavior: smooth;
+}
+
+/* iOS input reset */
+input,
+textarea {
+  -webkit-appearance: none;
+  border-radius: 0;
+}
+
+/* Prevent zoom on input focus for iOS */
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="password"],
+textarea {
+  font-size: 16px;
+}
+
+/* Transition defaults */
+.transition-ios {
+  transition: all 0.2s ease;
+}
+
+/* Backdrop blur support */
+.backdrop-blur-ios {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Active state for touchable elements */
+.touchable:active {
+  opacity: 0.6;
+}
+
+/* Contact avatar gradient colors */
+.avatar-blue { background: linear-gradient(135deg, #007AFF, #5856D6); }
+.avatar-green { background: linear-gradient(135deg, #34C759, #30D158); }
+.avatar-orange { background: linear-gradient(135deg, #FF9500, #FF6B00); }
+.avatar-pink { background: linear-gradient(135deg, #FF2D55, #FF375F); }
+.avatar-purple { background: linear-gradient(135deg, #AF52DE, #BF5AF2); }
+.avatar-red { background: linear-gradient(135deg, #FF3B30, #FF453A); }
+.avatar-teal { background: linear-gradient(135deg, #5AC8FA, #32ADE6); }
+.avatar-yellow { background: linear-gradient(135deg, #FFCC00, #FFD60A); }
