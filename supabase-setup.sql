@@ -20,6 +20,9 @@ CREATE POLICY "Allow all" ON contacts
 
 CREATE INDEX IF NOT EXISTS contacts_name_idx ON contacts (name);
 
+-- Add photo column (run if contacts table already exists)
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS photo TEXT;
+
 
 -- =============================================
 -- PART 2: Lists (groups) — run in Supabase SQL editor

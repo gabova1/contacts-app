@@ -7,7 +7,7 @@ type Props = {
   lists: ContactList[];
   activeListId: string | null;
   onSelectList: (id: string | null) => void;
-  onCreateList: (name: string) => Promise<void>;
+  onCreateList: (name: string) => Promise<ContactList | null>;
   onRenameList: (id: string, name: string) => Promise<void>;
   onDeleteList: (id: string) => Promise<void>;
   onClose: () => void;

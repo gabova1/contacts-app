@@ -46,13 +46,19 @@ export default function ContactItem({ contact, onClick, isLast }: Props) {
       className="w-full flex items-center px-4 py-3 bg-white active:bg-[#F2F2F7] transition-colors duration-100 touchable"
     >
       {/* Avatar */}
-      <div
-        className={`w-[44px] h-[44px] rounded-full flex items-center justify-center flex-shrink-0 ${colorClass}`}
-      >
-        <span className="text-white font-semibold text-[17px] leading-none">
-          {initials}
-        </span>
-      </div>
+      {contact.photo ? (
+        <img
+          src={contact.photo}
+          alt={contact.name}
+          className="w-[44px] h-[44px] rounded-full object-cover flex-shrink-0"
+        />
+      ) : (
+        <div className={`w-[44px] h-[44px] rounded-full flex items-center justify-center flex-shrink-0 ${colorClass}`}>
+          <span className="text-white font-semibold text-[17px] leading-none">
+            {initials}
+          </span>
+        </div>
+      )}
 
       {/* Name */}
       <div className="flex-1 ml-3 flex items-center min-w-0">

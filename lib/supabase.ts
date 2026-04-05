@@ -11,6 +11,7 @@ export type Contact = {
   phone: string | null;
   email: string | null;
   notes: string | null;
+  photo: string | null;
   created_at: string;
 };
 

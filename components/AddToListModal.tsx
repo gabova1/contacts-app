@@ -9,7 +9,7 @@ type Props = {
   contactListIds: string[];
   onToggle: (listId: string) => Promise<void>;
   onClose: () => void;
-  onCreateList: (name: string) => Promise<void>;
+  onCreateList: (name: string) => Promise<ContactList | null>;
 };
 
 export default function AddToListModal({

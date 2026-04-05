@@ -127,9 +127,17 @@ export default function ContactDetail({
       <div className="flex-1 overflow-y-auto">
         {/* Avatar + name */}
         <div className="flex flex-col items-center pt-6 pb-8 px-4">
-          <div className={`w-[96px] h-[96px] rounded-full flex items-center justify-center ${colorClass} mb-3`}>
-            <span className="text-white font-semibold text-[36px] leading-none">{initials}</span>
-          </div>
+          {contact.photo ? (
+            <img
+              src={contact.photo}
+              alt={contact.name}
+              className="w-[96px] h-[96px] rounded-full object-cover mb-3"
+            />
+          ) : (
+            <div className={`w-[96px] h-[96px] rounded-full flex items-center justify-center ${colorClass} mb-3`}>
+              <span className="text-white font-semibold text-[36px] leading-none">{initials}</span>
+            </div>
+          )}
           <h1 className="text-[28px] font-semibold text-[#1C1C1E] text-center leading-tight">
             {contact.name}
           </h1>

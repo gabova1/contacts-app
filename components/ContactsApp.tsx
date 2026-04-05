@@ -71,6 +71,7 @@ export default function ContactsApp() {
         phone: form.phone.trim() || null,
         email: form.email.trim() || null,
         notes: form.notes.trim() || null,
+        photo: form.photo || null,
       }])
       .select()
       .single();
@@ -98,6 +99,7 @@ export default function ContactsApp() {
         phone: form.phone.trim() || null,
         email: form.email.trim() || null,
         notes: form.notes.trim() || null,
+        photo: form.photo || null,
       })
       .eq("id", id)
       .select()
@@ -136,11 +138,13 @@ export default function ContactsApp() {
   };
 
   // --- List CRUD ---
-  const handleCreateList = async (name: string) => {
+  const handleCreateList = async (name: string): Promise<ContactList | null> => {
     const { data, error } = await supabase.from("lists").insert([{ name }]).select().single();
     if (!error && data) {
       setLists((prev) => [...prev, data]);
+      return data;
     }
+    return null;
   };
 
   const handleRenameList = async (id: string, name: string) => {
@@ -180,6 +184,7 @@ export default function ContactsApp() {
         lists={lists}
         onSave={handleAdd}
         onCancel={() => setView({ type: "list" })}
+        onCreateList={handleCreateList}
       />
     );
   }
@@ -192,6 +197,7 @@ export default function ContactsApp() {
         lists={lists}
         onSave={handleEdit}
         onCancel={() => setView({ type: "detail", contact: view.contact })}
+        onCreateList={handleCreateList}
       />
     );
   }
