@@ -232,7 +232,6 @@ export default function ContactForm({
             ref={fileInputRef}
             type="file"
             accept="image/*"
-            capture="user"
             onChange={handlePhotoChange}
             className="hidden"
           />
