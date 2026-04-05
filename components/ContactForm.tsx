@@ -1,27 +1,31 @@
 "use client";
 
 import { useState } from "react";
-import { Contact } from "@/lib/supabase";
+import { Contact, ContactList } from "@/lib/supabase";
 
-type FormData = {
+export type FormData = {
   name: string;
   phone: string;
   email: string;
   notes: string;
+  listIds: string[];
 };
 
 type Props = {
   initial?: Contact;
+  initialListIds?: string[];
+  lists?: ContactList[];
   onSave: (data: FormData) => Promise<void>;
   onCancel: () => void;
 };
 
-export default function ContactForm({ initial, onSave, onCancel }: Props) {
+export default function ContactForm({ initial, initialListIds = [], lists = [], onSave, onCancel }: Props) {
   const [form, setForm] = useState<FormData>({
     name: initial?.name ?? "",
     phone: initial?.phone ?? "",
     email: initial?.email ?? "",
     notes: initial?.notes ?? "",
+    listIds: initialListIds,
   });
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -57,6 +61,15 @@ export default function ContactForm({ initial, onSave, onCancel }: Props) {
     }
   };
 
+  const toggleList = (listId: string) => {
+    setForm((prev) => ({
+      ...prev,
+      listIds: prev.listIds.includes(listId)
+        ? prev.listIds.filter((id) => id !== listId)
+        : [...prev.listIds, listId],
+    }));
+  };
+
   const validate = () => {
     const e: Record<string, string> = {};
     if (!form.name.trim()) e.name = "Введите имя";
@@ -75,40 +88,16 @@ export default function ContactForm({ initial, onSave, onCancel }: Props) {
   };
 
   const fields = [
-    {
-      key: "name" as const,
-      label: "Имя",
-      placeholder: "Имя",
-      type: "text",
-      required: true,
-      autoComplete: "name",
-    },
-    {
-      key: "phone" as const,
-      label: "Телефон",
-      placeholder: "+7 (___) ___-__-__",
-      type: "tel",
-      required: false,
-      autoComplete: "tel",
-    },
-    {
-      key: "email" as const,
-      label: "Email",
-      placeholder: "example@mail.ru",
-      type: "email",
-      required: false,
-      autoComplete: "email",
-    },
+    { key: "name" as const, label: "Имя", placeholder: "Имя", type: "text", required: true, autoComplete: "name" },
+    { key: "phone" as const, label: "Телефон", placeholder: "+7 (___) ___-__-__", type: "tel", required: false, autoComplete: "tel" },
+    { key: "email" as const, label: "Email", placeholder: "example@mail.ru", type: "email", required: false, autoComplete: "email" },
   ];
 
   return (
     <div className="flex flex-col min-h-screen bg-[#F2F2F7]">
       {/* Navigation bar */}
       <div className="flex items-center justify-between px-4 pt-safe-top pt-4 pb-2 bg-[#F2F2F7]">
-        <button
-          onClick={onCancel}
-          className="text-[#007AFF] text-[17px] touchable"
-        >
+        <button onClick={onCancel} className="text-[#007AFF] text-[17px] touchable">
           Отмена
         </button>
         <h1 className="text-[17px] font-semibold text-[#1C1C1E]">
@@ -129,7 +118,7 @@ export default function ContactForm({ initial, onSave, onCancel }: Props) {
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6">
-        {/* Avatar section */}
+        {/* Avatar */}
         <div className="flex flex-col items-center py-4">
           <div className="w-[88px] h-[88px] rounded-full bg-[#C7C7CC] flex items-center justify-center">
             {form.name ? (
@@ -142,7 +131,6 @@ export default function ContactForm({ initial, onSave, onCancel }: Props) {
               </svg>
             )}
           </div>
-          {/* Import from device contacts (mobile only) */}
           {hasContactPicker && !initial && (
             <button
               onClick={handleImport}
@@ -178,31 +166,68 @@ export default function ContactForm({ initial, onSave, onCancel }: Props) {
                 />
               </div>
               {errors[field.key] && (
-                <p className="px-4 pb-2 text-[12px] text-[#FF3B30]">
-                  {errors[field.key]}
-                </p>
+                <p className="px-4 pb-2 text-[12px] text-[#FF3B30]">{errors[field.key]}</p>
               )}
-              {idx < fields.length - 1 && (
-                <div className="ml-[100px] h-[0.5px] bg-[#C6C6C8]" />
-              )}
+              {idx < fields.length - 1 && <div className="ml-[100px] h-[0.5px] bg-[#C6C6C8]" />}
             </div>
           ))}
         </div>
 
-        {/* Notes field */}
+        {/* Notes */}
         <div>
-          <p className="text-[13px] text-[#8E8E93] uppercase font-medium px-1 mb-1">
-            Заметки
-          </p>
+          <p className="text-[13px] text-[#8E8E93] uppercase font-medium px-1 mb-1">Заметки</p>
           <div className="bg-white rounded-[10px] px-4 py-3">
             <textarea
               placeholder="Добавить заметку..."
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              rows={5}
+              rows={4}
               className="w-full bg-transparent outline-none text-[17px] text-[#1C1C1E] placeholder-[#C7C7CC] resize-none leading-relaxed"
             />
           </div>
+        </div>
+
+        {/* Lists */}
+        <div>
+          <p className="text-[13px] text-[#8E8E93] uppercase font-medium px-1 mb-1">Списки</p>
+          {lists.length === 0 ? (
+            <div className="bg-white rounded-[10px] px-4 py-4">
+              <p className="text-[15px] text-[#C7C7CC]">
+                Нет списков — создайте их в разделе «Группы»
+              </p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-[10px] overflow-hidden">
+              {lists.map((list, idx) => {
+                const isSelected = form.listIds.includes(list.id);
+                return (
+                  <div key={list.id}>
+                    <button
+                      onClick={() => toggleList(list.id)}
+                      className="w-full flex items-center justify-between px-4 py-4 touchable active:bg-[#F2F2F7]"
+                    >
+                      <div className="flex items-center gap-3">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill={isSelected ? "#007AFF" : "#C7C7CC"}>
+                          <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/>
+                        </svg>
+                        <span className={`text-[17px] ${isSelected ? "text-[#007AFF]" : "text-[#1C1C1E]"}`}>
+                          {list.name}
+                        </span>
+                      </div>
+                      {isSelected && (
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#007AFF">
+                          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                        </svg>
+                      )}
+                    </button>
+                    {idx < lists.length - 1 && (
+                      <div className="h-[0.5px] bg-[#C6C6C8] ml-[52px]" />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>

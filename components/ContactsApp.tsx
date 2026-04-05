@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase, Contact, ContactList, ContactListAssignment } from "@/lib/supabase";
+import { FormData } from "./ContactForm";
 import SearchBar from "./SearchBar";
 import ContactListView from "./ContactList";
 import ContactDetail from "./ContactDetail";
@@ -62,7 +63,7 @@ export default function ContactsApp() {
     assignments.filter((a) => a.contact_id === contactId).map((a) => a.list_id);
 
   // --- Contact CRUD ---
-  const handleAdd = async (form: { name: string; phone: string; email: string; notes: string }) => {
+  const handleAdd = async (form: FormData) => {
     const { data, error } = await supabase
       .from("contacts")
       .insert([{
@@ -76,11 +77,17 @@ export default function ContactsApp() {
 
     if (!error && data) {
       setContacts((prev) => [...prev, data].sort((a, b) => a.name.localeCompare(b.name, "ru")));
+      // Assign to selected lists
+      if (form.listIds.length > 0) {
+        const rows = form.listIds.map((list_id) => ({ contact_id: data.id, list_id }));
+        await supabase.from("contact_lists").insert(rows);
+        setAssignments((prev) => [...prev, ...rows]);
+      }
       setView({ type: "list" });
     }
   };
 
-  const handleEdit = async (form: { name: string; phone: string; email: string; notes: string }) => {
+  const handleEdit = async (form: FormData) => {
     if (view.type !== "edit") return;
     const id = view.contact.id;
 
@@ -100,6 +107,21 @@ export default function ContactsApp() {
       setContacts((prev) =>
         prev.map((c) => (c.id === id ? data : c)).sort((a, b) => a.name.localeCompare(b.name, "ru"))
       );
+      // Sync list assignments: remove old, add new
+      const oldIds = assignments.filter((a) => a.contact_id === id).map((a) => a.list_id);
+      const toAdd = form.listIds.filter((lid) => !oldIds.includes(lid));
+      const toRemove = oldIds.filter((lid) => !form.listIds.includes(lid));
+      if (toRemove.length > 0) {
+        await supabase.from("contact_lists").delete().eq("contact_id", id).in("list_id", toRemove);
+        setAssignments((prev) =>
+          prev.filter((a) => !(a.contact_id === id && toRemove.includes(a.list_id)))
+        );
+      }
+      if (toAdd.length > 0) {
+        const rows = toAdd.map((list_id) => ({ contact_id: id, list_id }));
+        await supabase.from("contact_lists").insert(rows);
+        setAssignments((prev) => [...prev, ...rows]);
+      }
       setView({ type: "detail", contact: data });
     }
   };
@@ -153,13 +175,21 @@ export default function ContactsApp() {
 
   // --- Views ---
   if (view.type === "add") {
-    return <ContactForm onSave={handleAdd} onCancel={() => setView({ type: "list" })} />;
+    return (
+      <ContactForm
+        lists={lists}
+        onSave={handleAdd}
+        onCancel={() => setView({ type: "list" })}
+      />
+    );
   }
 
   if (view.type === "edit") {
     return (
       <ContactForm
         initial={view.contact}
+        initialListIds={getContactListIds(view.contact.id)}
+        lists={lists}
         onSave={handleEdit}
         onCancel={() => setView({ type: "detail", contact: view.contact })}
       />
