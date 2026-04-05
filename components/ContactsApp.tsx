@@ -32,7 +32,7 @@ export default function ContactsApp() {
     setLoading(true);
     const [contactsRes, listsRes, assignmentsRes] = await Promise.all([
       supabase.from("contacts").select("*").order("name", { ascending: true }),
-      supabase.from("lists").select("*").order("created_at", { ascending: true }),
+      supabase.from("lists").select("*").order("order", { ascending: true }).order("created_at", { ascending: true }),
       supabase.from("contact_lists").select("*"),
     ]);
 
@@ -139,12 +139,22 @@ export default function ContactsApp() {
 
   // --- List CRUD ---
   const handleCreateList = async (name: string): Promise<ContactList | null> => {
-    const { data, error } = await supabase.from("lists").insert([{ name }]).select().single();
+    const nextOrder = lists.length;
+    const { data, error } = await supabase.from("lists").insert([{ name, order: nextOrder }]).select().single();
     if (!error && data) {
       setLists((prev) => [...prev, data]);
       return data;
     }
     return null;
+  };
+
+  const handleReorderLists = async (newLists: ContactList[]) => {
+    setLists(newLists); // optimistic
+    await Promise.all(
+      newLists.map((list, idx) =>
+        supabase.from("lists").update({ order: idx }).eq("id", list.id)
+      )
+    );
   };
 
   const handleRenameList = async (id: string, name: string) => {
@@ -310,6 +320,7 @@ export default function ContactsApp() {
           onCreateList={handleCreateList}
           onRenameList={handleRenameList}
           onDeleteList={handleDeleteList}
+          onReorder={handleReorderLists}
           onClose={() => setShowListsPanel(false)}
         />
       )}

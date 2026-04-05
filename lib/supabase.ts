@@ -18,6 +18,7 @@ export type Contact = {
 export type ContactList = {
   id: string;
   name: string;
+  order: number;
   created_at: string;
 };
 

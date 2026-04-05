@@ -31,8 +31,12 @@ ALTER TABLE contacts ADD COLUMN IF NOT EXISTS photo TEXT;
 CREATE TABLE IF NOT EXISTS lists (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
+  "order" INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT now()
 );
+
+-- Add order column if table already exists
+ALTER TABLE lists ADD COLUMN IF NOT EXISTS "order" INTEGER NOT NULL DEFAULT 0;
 
 ALTER TABLE lists ENABLE ROW LEVEL SECURITY;
 
