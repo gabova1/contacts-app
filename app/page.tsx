@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import PasswordScreen from "@/components/PasswordScreen";
 import ContactsApp from "@/components/ContactsApp";
 
+const APP_LOGIN = "admin";
 const APP_PASSWORD = "1234";
 const SESSION_KEY = "contacts_auth";
 
@@ -22,8 +23,8 @@ export default function Home() {
     }
   }, []);
 
-  const handleAuth = (password: string) => {
-    if (password === APP_PASSWORD) {
+  const handleAuth = (login: string, password: string) => {
+    if (login === APP_LOGIN && password === APP_PASSWORD) {
       sessionStorage.setItem(SESSION_KEY, "true");
       setAuthenticated(true);
       return true;

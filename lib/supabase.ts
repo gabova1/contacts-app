@@ -13,3 +13,14 @@ export type Contact = {
   notes: string | null;
   created_at: string;
 };
+
+export type ContactList = {
+  id: string;
+  name: string;
+  created_at: string;
+};
+
+export type ContactListAssignment = {
+  contact_id: string;
+  list_id: string;
+};

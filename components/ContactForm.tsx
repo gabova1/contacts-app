@@ -25,6 +25,37 @@ export default function ContactForm({ initial, onSave, onCancel }: Props) {
   });
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [importing, setImporting] = useState(false);
+
+  const hasContactPicker =
+    typeof window !== "undefined" &&
+    "contacts" in navigator &&
+    "ContactsManager" in window;
+
+  const handleImport = async () => {
+    if (!hasContactPicker) return;
+    try {
+      setImporting(true);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const results = await (navigator as any).contacts.select(
+        ["name", "tel", "email"],
+        { multiple: false }
+      );
+      if (results && results.length > 0) {
+        const c = results[0];
+        setForm((prev) => ({
+          ...prev,
+          name: c.name?.[0] ?? prev.name,
+          phone: c.tel?.[0] ?? prev.phone,
+          email: c.email?.[0] ?? prev.email,
+        }));
+      }
+    } catch {
+      // User cancelled
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -111,9 +142,19 @@ export default function ContactForm({ initial, onSave, onCancel }: Props) {
               </svg>
             )}
           </div>
-          <button className="text-[#007AFF] text-[14px] mt-2 touchable">
-            Добавить фото
-          </button>
+          {/* Import from device contacts (mobile only) */}
+          {hasContactPicker && !initial && (
+            <button
+              onClick={handleImport}
+              disabled={importing}
+              className="flex items-center gap-1.5 text-[#007AFF] text-[14px] mt-2 touchable disabled:opacity-50"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="#007AFF">
+                <path d="M20 0H4C2.9 0 2 .9 2 2v18l4-4h14c1.1 0 2-.9 2-2V2c0-1.1-.9-2-2-2zm-9 11H9V9h2V7h2v2h2v2h-2v2h-2v-2z"/>
+              </svg>
+              {importing ? "Загрузка..." : "Импорт из контактов"}
+            </button>
+          )}
         </div>
 
         {/* Main fields */}
