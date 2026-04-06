@@ -95,11 +95,8 @@ function SortableRow({
       ) : (
         <button
           onClick={onSelect}
-          className="flex-1 flex items-center gap-3 text-left touchable"
+          className="flex-1 flex items-center text-left touchable"
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill={isActive ? "#007AFF" : "#8E8E93"}>
-            <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/>
-          </svg>
           <span className={`text-[17px] ${isActive ? "text-[#007AFF] font-semibold" : "text-[#1C1C1E]"}`}>
             {list.name}
           </span>
