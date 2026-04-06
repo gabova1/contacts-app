@@ -18,7 +18,7 @@ type Props = {
   initial?: Contact;
   initialListIds?: string[];
   lists?: ContactList[];
-  onSave: (data: FormData) => Promise<void>;
+  onSave: (data: FormData) => Promise<string | null>; // returns error message or null
   onCancel: () => void;
   onCreateList?: (name: string) => Promise<ContactList | null>;
 };
@@ -133,8 +133,9 @@ export default function ContactForm({
       return;
     }
     setSaving(true);
-    await onSave(form);
+    const err = await onSave(form);
     setSaving(false);
+    if (err) setErrors({ save: err });
   };
 
   const fields = [
@@ -166,6 +167,12 @@ export default function ContactForm({
           )}
         </button>
       </div>
+
+      {errors.save && (
+        <div className="mx-4 mt-2 px-4 py-3 bg-[#FF3B30]/10 rounded-[10px]">
+          <p className="text-[14px] text-[#FF3B30]">{errors.save}</p>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6">
         {/* Avatar / Photo */}

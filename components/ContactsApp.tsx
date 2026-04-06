@@ -68,7 +68,7 @@ export default function ContactsApp() {
     assignments.filter((a) => a.contact_id === contactId).map((a) => a.list_id);
 
   // --- Contact CRUD ---
-  const handleAdd = async (form: FormData) => {
+  const handleAdd = async (form: FormData): Promise<string | null> => {
     const { data, error } = await supabase
       .from("contacts")
       .insert([{
@@ -82,7 +82,8 @@ export default function ContactsApp() {
       .select()
       .single();
 
-    if (!error && data) {
+    if (error) return error.message;
+    if (data) {
       setContacts((prev) => [...prev, data].sort((a, b) => a.name.localeCompare(b.name, "ru")));
       if (form.listIds.length > 0) {
         const rows = form.listIds.map((list_id) => ({ contact_id: data.id, list_id }));
@@ -91,10 +92,11 @@ export default function ContactsApp() {
       }
       setView({ type: "list" });
     }
+    return null;
   };
 
-  const handleEdit = async (form: FormData) => {
-    if (view.type !== "edit") return;
+  const handleEdit = async (form: FormData): Promise<string | null> => {
+    if (view.type !== "edit") return null;
     const id = view.contact.id;
 
     const { data, error } = await supabase
@@ -111,7 +113,8 @@ export default function ContactsApp() {
       .select()
       .single();
 
-    if (!error && data) {
+    if (error) return error.message;
+    if (data) {
       setContacts((prev) =>
         prev.map((c) => (c.id === id ? data : c)).sort((a, b) => a.name.localeCompare(b.name, "ru"))
       );
@@ -131,6 +134,7 @@ export default function ContactsApp() {
       }
       setView({ type: "detail", contact: data });
     }
+    return null;
   };
 
   const handleDelete = async (contact: Contact) => {
