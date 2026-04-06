@@ -62,8 +62,8 @@ export default function ContactItem({ contact, onClick, isLast }: Props) {
       )}
 
       {/* Name + rating */}
-      <div className="flex-1 ml-3 flex flex-col items-start justify-center min-w-0">
-        <span className="text-[17px] text-[#1C1C1E] truncate w-full">{contact.name}</span>
+      <div className="flex-1 ml-3 flex flex-col justify-center min-w-0 overflow-hidden">
+        <span className="text-[17px] text-[#1C1C1E] text-left truncate">{contact.name}</span>
         {contact.rating > 0 && (
           <StarRating value={contact.rating} size={12} readonly />
         )}
