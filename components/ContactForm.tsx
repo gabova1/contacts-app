@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Contact, ContactList } from "@/lib/supabase";
+import StarRating from "./StarRating";
 
 export type FormData = {
   name: string;
@@ -9,6 +10,7 @@ export type FormData = {
   email: string;
   notes: string;
   photo: string;
+  rating: number;
   listIds: string[];
 };
 
@@ -35,6 +37,7 @@ export default function ContactForm({
     email: initial?.email ?? "",
     notes: initial?.notes ?? "",
     photo: initial?.photo ?? "",
+    rating: initial?.rating ?? 0,
     listIds: initialListIds,
   });
   const [saving, setSaving] = useState(false);
@@ -275,6 +278,21 @@ export default function ContactForm({
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
               rows={4}
               className="w-full bg-transparent outline-none text-[17px] text-[#1C1C1E] placeholder-[#C7C7CC] resize-none leading-relaxed"
+            />
+          </div>
+        </div>
+
+        {/* Rating */}
+        <div>
+          <p className="text-[13px] text-[#8E8E93] uppercase font-medium px-1 mb-1">Рейтинг</p>
+          <div className="bg-white rounded-[10px] px-4 py-4 flex items-center justify-between">
+            <span className="text-[17px] text-[#1C1C1E]">
+              {form.rating === 0 ? "Без рейтинга" : `${form.rating} из 3`}
+            </span>
+            <StarRating
+              value={form.rating}
+              onChange={(v) => setForm((prev) => ({ ...prev, rating: v }))}
+              size={28}
             />
           </div>
         </div>

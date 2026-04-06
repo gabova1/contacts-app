@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Contact, ContactList } from "@/lib/supabase";
+import StarRating from "./StarRating";
 
 const AVATAR_COLORS = [
   "avatar-blue", "avatar-green", "avatar-orange", "avatar-pink",
@@ -44,6 +45,7 @@ type Props = {
   onDelete: () => void;
   onBack: () => void;
   onAddToList: () => void;
+  onRate: (rating: number) => void;
 };
 
 export default function ContactDetail({
@@ -54,6 +56,7 @@ export default function ContactDetail({
   onDelete,
   onBack,
   onAddToList,
+  onRate,
 }: Props) {
   const colorClass = getAvatarColor(contact.name);
   const initials = getInitials(contact.name);
@@ -141,6 +144,9 @@ export default function ContactDetail({
           <h1 className="text-[28px] font-semibold text-[#1C1C1E] text-center leading-tight">
             {contact.name}
           </h1>
+          <div className="mt-2">
+            <StarRating value={contact.rating} onChange={onRate} size={28} />
+          </div>
         </div>
 
         {/* Action buttons */}

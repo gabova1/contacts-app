@@ -23,6 +23,9 @@ CREATE INDEX IF NOT EXISTS contacts_name_idx ON contacts (name);
 -- Add photo column (run if contacts table already exists)
 ALTER TABLE contacts ADD COLUMN IF NOT EXISTS photo TEXT;
 
+-- Add rating column (0-3, default 0)
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS rating INTEGER NOT NULL DEFAULT 0;
+
 
 -- =============================================
 -- PART 2: Lists (groups) — run in Supabase SQL editor

@@ -12,6 +12,7 @@ export type Contact = {
   email: string | null;
   notes: string | null;
   photo: string | null;
+  rating: number;
   created_at: string;
 };
 

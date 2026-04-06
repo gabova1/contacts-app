@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase, Contact, ContactList, ContactListAssignment } from "@/lib/supabase";
 import { FormData } from "./ContactForm";
+import { SortBy } from "./ContactList";
 import SearchBar from "./SearchBar";
 import ContactListView from "./ContactList";
 import ContactDetail from "./ContactDetail";
@@ -16,6 +17,12 @@ type View =
   | { type: "add" }
   | { type: "edit"; contact: Contact };
 
+const SORT_OPTIONS: { value: SortBy; label: string; icon: string }[] = [
+  { value: "alpha",  label: "А–Я",     icon: "M3 7h10M3 12h7M3 17h4M15 7l3 10 3-10" },
+  { value: "date",   label: "Дата",    icon: "M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z" },
+  { value: "rating", label: "Рейтинг", icon: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" },
+];
+
 export default function ContactsApp() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [lists, setLists] = useState<ContactList[]>([]);
@@ -27,6 +34,8 @@ export default function ContactsApp() {
   const [error, setError] = useState<string | null>(null);
   const [showListsPanel, setShowListsPanel] = useState(false);
   const [showAddToList, setShowAddToList] = useState(false);
+  const [sortBy, setSortBy] = useState<SortBy>("alpha");
+  const [showSortMenu, setShowSortMenu] = useState(false);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -35,7 +44,6 @@ export default function ContactsApp() {
       supabase.from("lists").select("*").order("order", { ascending: true }).order("created_at", { ascending: true }),
       supabase.from("contact_lists").select("*"),
     ]);
-
     if (contactsRes.error) {
       setError("Ошибка загрузки контактов");
     } else {
@@ -46,11 +54,8 @@ export default function ContactsApp() {
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    fetchAll();
-  }, [fetchAll]);
+  useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  // Contacts filtered by active list (search handled inside ContactListView)
   const contactsInActiveList = useMemo(() => {
     if (!activeListId) return contacts;
     const ids = new Set(
@@ -72,13 +77,13 @@ export default function ContactsApp() {
         email: form.email.trim() || null,
         notes: form.notes.trim() || null,
         photo: form.photo || null,
+        rating: form.rating,
       }])
       .select()
       .single();
 
     if (!error && data) {
       setContacts((prev) => [...prev, data].sort((a, b) => a.name.localeCompare(b.name, "ru")));
-      // Assign to selected lists
       if (form.listIds.length > 0) {
         const rows = form.listIds.map((list_id) => ({ contact_id: data.id, list_id }));
         await supabase.from("contact_lists").insert(rows);
@@ -100,6 +105,7 @@ export default function ContactsApp() {
         email: form.email.trim() || null,
         notes: form.notes.trim() || null,
         photo: form.photo || null,
+        rating: form.rating,
       })
       .eq("id", id)
       .select()
@@ -109,7 +115,6 @@ export default function ContactsApp() {
       setContacts((prev) =>
         prev.map((c) => (c.id === id ? data : c)).sort((a, b) => a.name.localeCompare(b.name, "ru"))
       );
-      // Sync list assignments: remove old, add new
       const oldIds = assignments.filter((a) => a.contact_id === id).map((a) => a.list_id);
       const toAdd = form.listIds.filter((lid) => !oldIds.includes(lid));
       const toRemove = oldIds.filter((lid) => !form.listIds.includes(lid));
@@ -137,31 +142,36 @@ export default function ContactsApp() {
     }
   };
 
+  const handleRate = async (contact: Contact, rating: number) => {
+    const { data, error } = await supabase
+      .from("contacts")
+      .update({ rating })
+      .eq("id", contact.id)
+      .select()
+      .single();
+    if (!error && data) {
+      setContacts((prev) => prev.map((c) => (c.id === contact.id ? data : c)));
+    }
+  };
+
   // --- List CRUD ---
   const handleCreateList = async (name: string): Promise<ContactList | null> => {
     const nextOrder = lists.length;
     const { data, error } = await supabase.from("lists").insert([{ name, order: nextOrder }]).select().single();
-    if (!error && data) {
-      setLists((prev) => [...prev, data]);
-      return data;
-    }
+    if (!error && data) { setLists((prev) => [...prev, data]); return data; }
     return null;
   };
 
   const handleReorderLists = async (newLists: ContactList[]) => {
-    setLists(newLists); // optimistic
-    await Promise.all(
-      newLists.map((list, idx) =>
-        supabase.from("lists").update({ order: idx }).eq("id", list.id)
-      )
-    );
+    setLists(newLists);
+    await Promise.all(newLists.map((list, idx) =>
+      supabase.from("lists").update({ order: idx }).eq("id", list.id)
+    ));
   };
 
   const handleRenameList = async (id: string, name: string) => {
     const { data, error } = await supabase.from("lists").update({ name }).eq("id", id).select().single();
-    if (!error && data) {
-      setLists((prev) => prev.map((l) => (l.id === id ? data : l)));
-    }
+    if (!error && data) setLists((prev) => prev.map((l) => (l.id === id ? data : l)));
   };
 
   const handleDeleteList = async (id: string) => {
@@ -173,7 +183,6 @@ export default function ContactsApp() {
     }
   };
 
-  // --- List assignments ---
   const handleToggleContactInList = async (contactId: string, listId: string) => {
     const isIn = assignments.some((a) => a.contact_id === contactId && a.list_id === listId);
     if (isIn) {
@@ -186,6 +195,7 @@ export default function ContactsApp() {
   };
 
   const activeList = lists.find((l) => l.id === activeListId) ?? null;
+  const currentSort = SORT_OPTIONS.find((s) => s.value === sortBy)!;
 
   // --- Views ---
   if (view.type === "add") {
@@ -224,6 +234,7 @@ export default function ContactsApp() {
           onDelete={() => handleDelete(freshContact)}
           onBack={() => { setSearch(""); setView({ type: "list" }); }}
           onAddToList={() => setShowAddToList(true)}
+          onRate={(rating) => handleRate(freshContact, rating)}
         />
         {showAddToList && (
           <AddToListModal
@@ -260,17 +271,65 @@ export default function ContactsApp() {
                 {activeList ? activeList.name : "Контакты"}
               </h1>
             </div>
-            <button
-              onClick={() => setView({ type: "add" })}
-              className="w-[32px] h-[32px] bg-[#007AFF] rounded-full flex items-center justify-center touchable shadow-sm"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-              </svg>
-            </button>
+            <div className="flex items-center gap-2 pb-1">
+              {/* Sort button */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowSortMenu((v) => !v)}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-white rounded-full shadow-sm touchable"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#007AFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d={currentSort.icon}/>
+                  </svg>
+                  <span className="text-[13px] text-[#007AFF] font-medium">{currentSort.label}</span>
+                </button>
+
+                {showSortMenu && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowSortMenu(false)} />
+                    <div className="absolute right-0 top-9 z-50 bg-white rounded-[12px] shadow-xl overflow-hidden w-[160px]">
+                      {SORT_OPTIONS.map((opt, idx) => (
+                        <div key={opt.value}>
+                          <button
+                            onClick={() => { setSortBy(opt.value); setShowSortMenu(false); }}
+                            className="w-full flex items-center justify-between px-4 py-3 touchable active:bg-[#F2F2F7]"
+                          >
+                            <div className="flex items-center gap-2">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={sortBy === opt.value ? "#007AFF" : "#8E8E93"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d={opt.icon}/>
+                              </svg>
+                              <span className={`text-[15px] ${sortBy === opt.value ? "text-[#007AFF] font-semibold" : "text-[#1C1C1E]"}`}>
+                                {opt.label}
+                              </span>
+                            </div>
+                            {sortBy === opt.value && (
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="#007AFF">
+                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                              </svg>
+                            )}
+                          </button>
+                          {idx < SORT_OPTIONS.length - 1 && (
+                            <div className="h-[0.5px] bg-[#C6C6C8] mx-4" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Add button */}
+              <button
+                onClick={() => setView({ type: "add" })}
+                className="w-[32px] h-[32px] bg-[#007AFF] rounded-full flex items-center justify-center touchable shadow-sm"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                  <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                </svg>
+              </button>
+            </div>
           </div>
 
-          {/* Search bar */}
           <div className="-mx-4">
             <SearchBar value={search} onChange={setSearch} />
           </div>
@@ -293,12 +352,12 @@ export default function ContactsApp() {
             <ContactListView
               contacts={contactsInActiveList}
               search={search}
+              sortBy={sortBy}
               onSelect={(contact) => setView({ type: "detail", contact })}
             />
           )}
         </div>
 
-        {/* Contact count */}
         {!loading && !error && !search && (
           <div className="text-center py-4 text-[#8E8E93] text-[14px]">
             {contactsInActiveList.length}{" "}
@@ -311,7 +370,6 @@ export default function ContactsApp() {
         )}
       </div>
 
-      {/* Lists panel */}
       {showListsPanel && (
         <ListsPanel
           lists={lists}

@@ -1,6 +1,7 @@
 "use client";
 
 import { Contact } from "@/lib/supabase";
+import StarRating from "./StarRating";
 
 const AVATAR_COLORS = [
   "avatar-blue",
@@ -60,9 +61,14 @@ export default function ContactItem({ contact, onClick, isLast }: Props) {
         </div>
       )}
 
-      {/* Name */}
-      <div className="flex-1 ml-3 flex items-center min-w-0">
+      {/* Name + rating */}
+      <div className="flex-1 ml-3 flex flex-col justify-center min-w-0">
         <span className="text-[17px] text-[#1C1C1E] truncate">{contact.name}</span>
+        {contact.rating > 0 && (
+          <div className="mt-0.5">
+            <StarRating value={contact.rating} size={12} readonly />
+          </div>
+        )}
       </div>
 
       {/* Chevron */}
